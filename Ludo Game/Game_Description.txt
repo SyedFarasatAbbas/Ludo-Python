@@ -1,0 +1,56 @@
+Edited Ludo-game.py
+Ran command: `py Ludo-game.py`
+
+This is a theoretical overview of how your Ludo application is built and how its internal logic functions.
+
+### 1. Technology Stack & Libraries
+The application is built using **Python** and relies primarily on the **Tkinter** library for its Graphical User Interface (GUI).
+
+*   **Tkinter**: Used to create the main window, display the board images, and handle mouse clicks. Every piece and board tile is essentially a `tkinter.Label` widget.
+*   **Random**: Used to simulate the dice rolls (`random.randint(1, 6)`).
+*   **Ctypes**: (Added recently) Used to make the app "DPI Aware" so it doesn't look blurry on high-resolution Windows screens.
+
+---
+
+### 2. How the Game Board is Built
+The board isn't one single image; it’s a composite of many smaller images placed precisely using absolute coordinates (`.place(x, y)`).
+
+*   **Static Images**: Background quadrants (Red, Blue, Green, Yellow) and the center star are placed once at the start.
+*   **Dynamic Tiles**: The "path" that pieces walk on is created by a series of loops in the `board()` function. It places small 50x50 pixel images (white boxes, colored boxes, and "stop" boxes) in a specific sequence to form the track.
+
+---
+
+### 3. Piece Recognition & Movement Logic
+This is the "brain" of the game. It works using a coordinate-based system rather than a grid.
+
+#### **A. The Data Structure**
+Every color has its own set of lists:
+*   **Path Lists**: `redbox`, `bluebox`, etc. These lists contain `Box` objects that hold the $(x, y)$ coordinates of every step the piece must take from start to finish.
+*   **Piece Objects**: Each player has 4 pieces (classes like `Box`, `BBox`, etc.). These objects keep track of:
+    *   `num`: Which step of the path they are currently on.
+    *   `x0, y0`: Their current pixel position on the screen.
+
+#### **B. Recognizing a "Click" on a Piece**
+When you click the screen, the `leftClick(event)` function triggers:
+1.  It calculates exactly where you clicked relative to the window top-left corner.
+2.  It loops through all 4 pieces of the player whose turn it is.
+3.  **Collision Detection**: It checks if the click $(cx, cy)$ falls within the bounding box (the 20x20 pixel area) of any piece. If it does, that piece is "selected" for movement.
+
+#### **C. Executing the Move**
+1.  **Dice Check**: The code looks at the dice value (e.g., 4).
+2.  **Path Update**: It takes the piece's current `num` (position index), adds the dice value (e.g., $num + 4$), and looks up the new $(x, y)$ coordinates from the pre-defined **Path List**.
+3.  **The "Swap"**: Once the new coordinates are found, the `swap()` method is called. This command physically moves the `Label` (the piece) to the new pixel location on the screen.
+
+---
+
+### 4. Game Rules Logic
+*   **Entering the Game**: A piece only moves from the "Home" area to the starting square if the dice roll is exactly **6**.
+*   **Kills**: After a move, the code loops through the opponent's pieces. If any opponent piece is at the *exact same* $(x, y)$ coordinates as your landing spot (and it's not a safe "stop" square), that piece's coordinates are reset to its starting Home position.
+*   **Winning**: A piece is removed from play (or "reaches home") when its `num` reaches 57 (the total steps in a Ludo path).
+
+### 5. Summary of the Flow
+1.  **User Click** $\rightarrow$ `roll()` updates dice labels.
+2.  **User Click on Piece** $\rightarrow$ `leftClick` detects which piece was touched.
+3.  **Logic Engine** $\rightarrow$ Calculates new position index $\rightarrow$ Fetches $(x, y)$ from coordinate list.
+4.  **GUI Update** $\rightarrow$ `piece.swap()` moves the image to the new $(x, y)$.
+5.  **Turn Switch** $\rightarrow$ Updates labels for the next player.
